@@ -6,7 +6,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 public interface PositionUpdate {
 
     @JsonCreator
-    static PositionUpdate of(@JsonProperty("id") String id, @JsonProperty("position") Position position) {
+    static PositionUpdate of(@JsonProperty("vehicleId") String id, @JsonProperty("position") Position position) {
         return new DefaultPositionUpdate(id, position);
     }
 

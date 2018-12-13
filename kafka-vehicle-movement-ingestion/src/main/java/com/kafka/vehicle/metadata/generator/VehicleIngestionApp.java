@@ -8,48 +8,58 @@ import com.kafka.vehicle.kafka.Builder;
 import com.kafka.vehicle.kafka.ShutdownHook;
 import com.kafka.vehicle.kafka.serdes.JsonSerde;
 import org.apache.kafka.clients.producer.Producer;
+import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.common.serialization.Serde;
 import org.apache.kafka.common.serialization.Serdes;
+import org.apache.kafka.streams.KafkaStreams;
 import org.apache.kafka.streams.StreamsBuilder;
+import org.apache.kafka.streams.Topology;
 import org.apache.kafka.streams.kstream.Consumed;
 import org.apache.kafka.streams.kstream.Joined;
 import org.apache.kafka.streams.kstream.KTable;
 import org.apache.kafka.streams.kstream.Serialized;
 
-import java.util.Random;
+import java.util.UUID;
 
 public class VehicleIngestionApp {
 
+    private static final String PRODUCER_ID = "vehicle-movement-ingestion";
+    private static final String CONSUMER_ID = "vehicle-movement-ingestion-consumer";
+
     public static void main(String[] args) {
 
-        String ip = args[0];
+        final String bootstrapServers = "localhost:9092";
 
-        Producer<String, VehicleSnapshot> producer = Builder.producerWithJsonSerializer(Topic.VEHICLE_SNAPSHOT.getValue(), ip + ":9092");
+        Producer<String, VehicleSnapshot> producer = Builder.producerWithJsonSerializer(Topic.VEHICLE_SNAPSHOT.getValue(), bootstrapServers);
 
         final StreamsBuilder builder = new StreamsBuilder();
 
-        Thread generator = new Thread(() -> {
+        Serde<Vehicle> vehicleSerde = JsonSerde.of(Vehicle.class);
+        Serde<PositionUpdate> positionUpdateSerde = JsonSerde.of(PositionUpdate.class);
+        Serde<VehicleSnapshot> vehicleSnapshotSerde = JsonSerde.of(VehicleSnapshot.class);
+        VehicleStatusMerger vehicleStatusMerger = new VehicleStatusMerger();
 
-            Serde<Vehicle> vehicleSerde = JsonSerde.of(Vehicle.class);
-            Serde<PositionUpdate> positionUpdateSerde = JsonSerde.of(PositionUpdate.class);
-            Serde<VehicleSnapshot> vehicleSnapshotSerde = JsonSerde.of(VehicleSnapshot.class);
-            VehicleStatusMerger vehicleStatusMerger = new VehicleStatusMerger();
+        KTable<String, Vehicle> newVehiclesKTable = builder.table(Topic.VEHICLE_NEW.getValue(), Consumed.with(Serdes.String(), vehicleSerde));
 
-            KTable<String, Vehicle> newVehiclesKTable = builder.table("vehicle-new", Consumed.with(Serdes.String(), vehicleSerde));
+        //            newVehiclesKTable.toStream()
+        //                             .foreach((key, value) -> System.out.println("Received new vehicle: " + value));
 
-            newVehiclesKTable.toStream()
-                             .foreach((key, value) -> System.out.println("Received new vehicle: " + value));
+        builder.stream(Topic.VEHICLE_POSITION_UPDATE.getValue(), Consumed.with(Serdes.String(), positionUpdateSerde))
+               .peek((key, value) -> System.out.println("key: " + key + ", value: " + value))
+               .leftJoin(newVehiclesKTable, (update, vehicle) -> vehicleStatusMerger.apply(vehicle, update), Joined.with(Serdes.String(), positionUpdateSerde, vehicleSerde))
+               .groupByKey(Serialized.with(Serdes.String(), vehicleSnapshotSerde))
+               .reduce((previousPosition, currentPosition) -> currentPosition.merge(previousPosition))
+               .toStream()
+               .foreach(((key, value) -> producer.send(new ProducerRecord<String, VehicleSnapshot>(UUID.randomUUID().toString(), value))));
+//               .foreach((key, value) -> System.out.println("Vehicle received update: (" + value.getVehicle().getName() + " -> " + value.getPosition().getPosition().getX() + "," + value.getPosition().getPosition().getY() + " updates)"));
 
-            builder.stream("vehicle-update", Consumed.with(Serdes.String(), positionUpdateSerde))
-                   .leftJoin(newVehiclesKTable, (update, vehicle) -> vehicleStatusMerger.apply(vehicle, update), Joined.with(Serdes.String(), positionUpdateSerde, vehicleSerde))
-                   .groupByKey(Serialized.with(Serdes.String(), vehicleSnapshotSerde))
-                   .reduce((previousPosition, currentPosition) -> currentPosition.merge(previousPosition))
-                   .toStream()
-                   .foreach((key, value) -> System.out.println("Vehicle received update: (" + value.getVehicle().getName() + " -> " + value.getPosition().getPosition().getX() + "," + value.getPosition().getPosition().getY() + " updates)"));
 
-        });
+        final Topology topology = builder.build();
 
-        ShutdownHook.of(() -> generator.start()).await();
+        final KafkaStreams streams = new KafkaStreams(topology, Builder.consumerProps(CONSUMER_ID, bootstrapServers));
+        streams.cleanUp();
+
+        ShutdownHook.of(() -> streams.start(), () -> streams.close()).await();
     }
-    
+
 }
