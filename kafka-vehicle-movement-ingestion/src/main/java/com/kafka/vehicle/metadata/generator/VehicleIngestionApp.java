@@ -19,8 +19,6 @@ import org.apache.kafka.streams.kstream.Joined;
 import org.apache.kafka.streams.kstream.KTable;
 import org.apache.kafka.streams.kstream.Serialized;
 
-import java.util.UUID;
-
 public class VehicleIngestionApp {
 
     private static final String PRODUCER_ID = "vehicle-movement-ingestion";
@@ -50,7 +48,7 @@ public class VehicleIngestionApp {
                .groupByKey(Serialized.with(Serdes.String(), vehicleSnapshotSerde))
                .reduce((previousPosition, currentPosition) -> currentPosition.merge(previousPosition))
                .toStream()
-               .foreach(((key, value) -> producer.send(new ProducerRecord<String, VehicleSnapshot>(UUID.randomUUID().toString(), value))));
+               .foreach(((key, value) -> producer.send(new ProducerRecord<>(key, value))));
 //               .foreach((key, value) -> System.out.println("Vehicle received update: (" + value.getVehicle().getName() + " -> " + value.getPosition().getPosition().getX() + "," + value.getPosition().getPosition().getY() + " updates)"));
 
 
