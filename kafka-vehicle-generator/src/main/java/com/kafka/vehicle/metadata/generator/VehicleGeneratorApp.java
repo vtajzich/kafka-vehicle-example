@@ -1,6 +1,7 @@
 package com.kafka.vehicle.metadata.generator;
 
 import com.kafka.vehicle.domain.Metadata;
+import com.kafka.vehicle.domain.Topic;
 import com.kafka.vehicle.domain.Vehicle;
 import com.kafka.vehicle.kafka.Builder;
 import com.kafka.vehicle.kafka.ShutdownHook;
@@ -26,7 +27,7 @@ public class VehicleGeneratorApp {
                   .forEach(vehicle -> {
 
                       try {
-                          producer.send(new ProducerRecord<>("vehicle-new", vehicle.getId(), vehicle));
+                          producer.send(new ProducerRecord<>(Topic.VEHICLE_NEW.getValue(), vehicle.getId(), vehicle));
                           Thread.sleep(5000);
                       } catch (InterruptedException e) {
                           e.printStackTrace();

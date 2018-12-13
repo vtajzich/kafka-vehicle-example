@@ -1,5 +1,7 @@
 package com.kafka.vehicle.domain;
 
+import java.util.StringJoiner;
+
 class DefaultPositionUpdate implements PositionUpdate {
 
     private final String id;
@@ -18,5 +20,13 @@ class DefaultPositionUpdate implements PositionUpdate {
     @Override
     public Position getPosition() {
         return position;
+    }
+
+    @Override
+    public String toString() {
+        return new StringJoiner(", ", DefaultPositionUpdate.class.getSimpleName() + "[", "]")
+                .add("id='" + id + "'")
+                .add("position=" + position)
+                .toString();
     }
 }

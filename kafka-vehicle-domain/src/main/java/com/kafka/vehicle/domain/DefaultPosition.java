@@ -1,5 +1,7 @@
 package com.kafka.vehicle.domain;
 
+import java.util.StringJoiner;
+
 class DefaultPosition implements Position {
 
     private final int x;
@@ -18,5 +20,13 @@ class DefaultPosition implements Position {
     @Override
     public int getY() {
         return y;
+    }
+
+    @Override
+    public String toString() {
+        return new StringJoiner(", ", DefaultPosition.class.getSimpleName() + "[", "]")
+                .add("x=" + x)
+                .add("y=" + y)
+                .toString();
     }
 }
