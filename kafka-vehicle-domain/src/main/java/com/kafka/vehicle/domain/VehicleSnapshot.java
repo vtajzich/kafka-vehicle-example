@@ -1,8 +1,12 @@
 package com.kafka.vehicle.domain;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 public interface VehicleSnapshot {
 
-    static VehicleSnapshot of(PositionUpdate position, Vehicle vehicle) {
+    @JsonCreator
+    static VehicleSnapshot of(@JsonProperty("position") PositionUpdate position, @JsonProperty("vehicle") Vehicle vehicle) {
         return new DefaultVehicleSnapshot(position, vehicle);
     }
 

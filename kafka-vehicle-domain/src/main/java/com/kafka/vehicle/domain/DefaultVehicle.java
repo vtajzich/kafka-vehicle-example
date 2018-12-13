@@ -5,11 +5,18 @@ import java.util.UUID;
 
 class DefaultVehicle implements Vehicle {
 
-    private final String id = UUID.randomUUID().toString();
+    private final String id; 
     private final String name;
     private final Metadata metadata;
 
-    public DefaultVehicle(String name, Metadata metadata) {
+    DefaultVehicle(String name, Metadata metadata) {
+        this.id =UUID.randomUUID().toString();
+        this.name = name;
+        this.metadata = metadata;
+    }
+
+    DefaultVehicle(final String id, final String name, final Metadata metadata) {
+        this.id = id;
         this.name = name;
         this.metadata = metadata;
     }
