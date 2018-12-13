@@ -1,5 +1,21 @@
+buildscript {
+    dependencies {
+        classpath 'com.github.jengelman.gradle.plugins:shadow:2.0.1'
+    }
+}
+
+apply plugin: 'com.github.johnrengelman.shadow'
+
 dependencies {
-    
+
     implementation project(':kafka-vehicle-domain')
     implementation project(':kafka-vehicle-kafka')
 }
+
+jar {
+    manifest {
+        attributes 'Main-Class': 'com.kafka.vehicle.metadata.generator.VehicleGeneratorApp'
+    }
+}
+
+project.tasks.assemble.dependsOn project.tasks.shadowJar

@@ -7,14 +7,13 @@ import com.kafka.vehicle.domain.VehicleModel;
 import com.kafka.vehicle.kafka.Builder;
 import com.kafka.vehicle.kafka.RandomUtil;
 import com.kafka.vehicle.kafka.ShutdownHook;
+import org.apache.commons.io.IOUtils;
 import org.apache.kafka.clients.producer.Producer;
 import org.apache.kafka.clients.producer.ProducerRecord;
 
 import java.io.IOException;
-import java.net.URISyntaxException;
-import java.net.URL;
-import java.nio.file.Files;
-import java.nio.file.Paths;
+import java.io.InputStream;
+import java.nio.charset.Charset;
 import java.util.Objects;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
@@ -22,15 +21,17 @@ import java.util.stream.Stream;
 
 public class VehicleGeneratorApp {
 
-    public static void main(String[] args) throws URISyntaxException, IOException {
+    public static void main(String[] args) throws IOException {
 
-        URL resource = VehicleGeneratorApp.class.getResource("/data.csv");
-        final var vehicleModels = Files.lines(Paths.get(resource.toURI()))
-                                  .skip(1)
-                                  .map(line -> line.split(","))
-                                  .map(columns -> VehicleModel.of(Integer.valueOf(columns[0]), columns[1].replaceAll("\"", ""), columns[2].replaceAll("\"", "")))
-                                  .collect(Collectors.toList());
-        
+        InputStream resource = VehicleGeneratorApp.class.getResourceAsStream("/data.csv");
+
+        final var vehicleModels = IOUtils.readLines(resource, Charset.defaultCharset())
+                                         .stream()
+                                         .skip(1)
+                                         .map(line -> line.split(","))
+                                         .map(columns -> VehicleModel.of(Integer.valueOf(columns[0]), columns[1].replaceAll("\"", ""), columns[2].replaceAll("\"", "")))
+                                         .collect(Collectors.toList());
+
         Producer<String, Vehicle> producer = Builder.producerWithJsonSerializer("vehicle", "localhost:9092");
 
         Thread generator = new Thread(() -> {
@@ -43,7 +44,7 @@ public class VehicleGeneratorApp {
 
                 return Vehicle.of(vehicleModel.getMake() + " - " + vehicleModel.getName(), Metadata.of(numberOfPassengers));
             };
-            
+
             Stream.generate(vehicleSupplier)
                   .filter(Objects::nonNull)
                   .peek(vehicle -> System.out.println("Vehicle: " + vehicle))
