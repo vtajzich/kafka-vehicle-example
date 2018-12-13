@@ -1,10 +1,12 @@
 package com.kafka.vehicle.position.generator;
 
+import com.kafka.vehicle.domain.Area;
 import com.kafka.vehicle.domain.Position;
 import com.kafka.vehicle.domain.PositionUpdate;
 import com.kafka.vehicle.domain.Topic;
 import com.kafka.vehicle.domain.Vehicle;
 import com.kafka.vehicle.kafka.Builder;
+import com.kafka.vehicle.kafka.RandomUtil;
 import com.kafka.vehicle.kafka.ShutdownHook;
 import com.kafka.vehicle.kafka.serdes.JsonSerde;
 import org.apache.kafka.clients.producer.Producer;
@@ -23,7 +25,7 @@ import java.util.stream.Stream;
 
 import static com.kafka.vehicle.kafka.RandomUtil.getRandomNumberInRange;
 
-public class PositionGeneratorApp {
+public class StartPositionGeneratorApp {
 
     private static final String PRODUCER_ID = "vehicle-position-generator";
     private static final String CONSUMER_ID = "vehicle-position-generator-consumer";
@@ -58,7 +60,10 @@ public class PositionGeneratorApp {
 
                 Vehicle vehicle = vehicles.get(vehicleId);
 
-                return PositionUpdate.of(vehicle.getId(), Position.of(0, 0));
+                int x = RandomUtil.getRandomNumberInRange(0, Area.WIDTH);
+                int y = RandomUtil.getRandomNumberInRange(0, Area.HEIGHT);
+                
+                return PositionUpdate.of(vehicle.getId(), Position.of(x, y));
 
             }).filter(Objects::nonNull)
                   .forEach(update -> {
