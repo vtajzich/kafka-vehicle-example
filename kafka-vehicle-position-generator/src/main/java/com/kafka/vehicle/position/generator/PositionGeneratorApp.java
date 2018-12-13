@@ -2,6 +2,7 @@ package com.kafka.vehicle.position.generator;
 
 import com.kafka.vehicle.domain.Position;
 import com.kafka.vehicle.domain.PositionUpdate;
+import com.kafka.vehicle.domain.Topic;
 import com.kafka.vehicle.domain.Vehicle;
 import com.kafka.vehicle.kafka.Builder;
 import com.kafka.vehicle.kafka.ShutdownHook;
@@ -18,26 +19,26 @@ import org.apache.kafka.streams.kstream.KTable;
 import java.util.Hashtable;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Properties;
 import java.util.stream.Stream;
 
 import static com.kafka.vehicle.kafka.RandomUtil.getRandomNumberInRange;
 
 public class PositionGeneratorApp {
 
-    private static final String CONSUMER_ID = "vehicle-position-generator";
+    private static final String PRODUCER_ID = "vehicle-position-generator";
+    private static final String CONSUMER_ID = "vehicle-position-generator-consumer";
 
     public static void main(String[] args) {
 
+        final String bootstrapServers = "localhost:9092";
+        
         Map<String, Vehicle> vehicles = new Hashtable<>();
 
-        Properties props = Builder.props(CONSUMER_ID, "localhost:9092");
-
-        Producer<String, PositionUpdate> producer = Builder.producerWithJsonSerializer(CONSUMER_ID, "localhost:9092");
+        Producer<String, PositionUpdate> producer = Builder.producerWithJsonSerializer(PRODUCER_ID, bootstrapServers);
 
         final StreamsBuilder builder = new StreamsBuilder();
 
-        KTable<String, Vehicle> vehicleTable = builder.table("vehicle-new", Consumed.with(Serdes.String(), JsonSerde.of(Vehicle.class)));
+        KTable<String, Vehicle> vehicleTable = builder.table(Topic.VEHICLE_NEW.getValue(), Consumed.with(Serdes.String(), JsonSerde.of(Vehicle.class)));
 
         vehicleTable.toStream()
                      .peek((key, value) -> System.out.println("Received vehicle: " + value))
@@ -63,7 +64,7 @@ public class PositionGeneratorApp {
                   .forEach(update -> {
 
                       System.out.println("Sending update: " + update);
-                      producer.send(new ProducerRecord<>("vehicle-position-update", update.getVehicleId(), update));
+                      producer.send(new ProducerRecord<>(Topic.VEHICLE_POSITION_UPDATE.getValue(), update.getVehicleId(), update));
 
                       try {
                           Thread.sleep(2000);
@@ -76,8 +77,11 @@ public class PositionGeneratorApp {
         generator.start();
 
         final Topology topology = builder.build();
-        final KafkaStreams streams = new KafkaStreams(topology, props);
-
-        ShutdownHook.of(() -> streams.start());
+        System.out.println(topology.describe());
+        
+        final KafkaStreams streams = new KafkaStreams(topology, Builder.consumerProps(CONSUMER_ID, bootstrapServers));
+        streams.cleanUp();
+        
+        ShutdownHook.of(() -> streams.start(), () -> streams.close()).await();
     }
 }

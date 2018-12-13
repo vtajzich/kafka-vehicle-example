@@ -5,14 +5,16 @@ import java.util.concurrent.CountDownLatch;
 public class ShutdownHook {
 
     final CountDownLatch latch = new CountDownLatch(1);
+    private final Runnable shutdownAction;
     private final Runnable action;
 
-    ShutdownHook(Runnable action) {
+    ShutdownHook(Runnable action, Runnable shutdownAction) {
         this.action = action;
+        this.shutdownAction = shutdownAction;
     }
     
-    public static ShutdownHook of(Runnable action) {
-        return new ShutdownHook(action);
+    public static ShutdownHook of(Runnable action, Runnable shutdownAction) {
+        return new ShutdownHook(action, shutdownAction);
     }
     
     public void await() {
@@ -20,6 +22,8 @@ public class ShutdownHook {
         Runtime.getRuntime().addShutdownHook(new Thread("streams-shutdown-hook") {
             @Override
             public void run() {
+                
+                shutdownAction.run();
                 latch.countDown();
             }
         });

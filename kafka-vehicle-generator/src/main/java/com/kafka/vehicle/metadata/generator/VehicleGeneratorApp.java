@@ -17,7 +17,7 @@ public class VehicleGeneratorApp {
 
         String ip = args[0];
 
-        Producer<String, Vehicle> producer = Builder.producerWithJsonSerializer("vehicle", ip + ":9092");
+        Producer<String, Vehicle> producer = Builder.producerWithJsonSerializer("vehicle", "localhost:9092");
 
         Thread generator = new Thread(() -> {
 
@@ -36,7 +36,7 @@ public class VehicleGeneratorApp {
                   });
         });
 
-        ShutdownHook.of(() -> generator.start()).await();
+        ShutdownHook.of(() -> generator.start(), () -> System.out.println("stop")).await();
     }
 
     
