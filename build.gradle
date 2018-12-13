@@ -1,24 +1,27 @@
 subprojects {
 
-    apply plugin: 'java'
-    apply plugin: 'groovy'
+    if (!it.name.endsWith('-ui')) {
 
-    group 'com.example.kafka.vehicle'
-    version '1.0.0-SNAPSHOT'
+        apply plugin: 'java'
+        apply plugin: 'groovy'
 
-    sourceCompatibility = 11
+        group 'com.example.kafka.vehicle'
+        version '1.0.0-SNAPSHOT'
 
-    repositories {
-        mavenCentral()
-    }
+        sourceCompatibility = 11
 
-    dependencies {
+        repositories {
+            mavenCentral()
+        }
 
-        compile 'com.fasterxml.jackson.module:jackson-module-parameter-names:2.9.7'
-        compile 'com.fasterxml.jackson.datatype:jackson-datatype-jdk8:2.9.7'
-        compile 'com.fasterxml.jackson.datatype:jackson-datatype-jsr310:2.9.7'
-        
-        compile group: 'org.codehaus.groovy', name: 'groovy', version: '2.5.4'
-        testCompile group: 'org.spockframework', name: 'spock-core', version: '1.2-groovy-2.5'
+        dependencies {
+
+            compile 'com.fasterxml.jackson.module:jackson-module-parameter-names:2.9.7'
+            compile 'com.fasterxml.jackson.datatype:jackson-datatype-jdk8:2.9.7'
+            compile 'com.fasterxml.jackson.datatype:jackson-datatype-jsr310:2.9.7'
+
+            compile group: 'org.codehaus.groovy', name: 'groovy', version: '2.5.4'
+            testCompile group: 'org.spockframework', name: 'spock-core', version: '1.2-groovy-2.5'
+        }
     }
 }
