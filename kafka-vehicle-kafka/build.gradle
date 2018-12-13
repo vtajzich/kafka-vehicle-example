@@ -1,0 +1,9 @@
+dependencies {
+
+
+    compile "org.apache.kafka:kafka-streams:2.1.0"
+
+    compile 'com.fasterxml.jackson.module:jackson-module-parameter-names:2.9.7'
+    compile 'com.fasterxml.jackson.datatype:jackson-datatype-jdk8:2.9.7'
+    compile 'com.fasterxml.jackson.datatype:jackson-datatype-jsr310:2.9.7'
+}
