@@ -12,16 +12,16 @@ import java.util.Properties;
 
 public interface Builder {
 
-    static Properties producerOf(String id, String bootstrapServers) {
-        return producerOf(id, bootstrapServers, Serdes.String().getClass());
+    static Properties props(String id, String bootstrapServers) {
+        return props(id, bootstrapServers, Serdes.String().getClass());
     }
     
-    static Properties producerOf(String id, String bootstrapServers, Class keySerderClass) {
+    static Properties props(String id, String bootstrapServers, Class keySerderClass) {
 
         Properties props = new Properties();
         props.put(StreamsConfig.APPLICATION_ID_CONFIG, id);
         props.put(StreamsConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServers);
-        props.put(StreamsConfig.DEFAULT_KEY_SERDE_CLASS_CONFIG, Serdes.String().getClass());
+        props.put(StreamsConfig.DEFAULT_KEY_SERDE_CLASS_CONFIG, keySerderClass);
         props.put(StreamsConfig.COMMIT_INTERVAL_MS_CONFIG, 5);
         props.put(StreamsConfig.POLL_MS_CONFIG, 5);
 
@@ -30,13 +30,13 @@ public interface Builder {
 
     static <Key, Value> Producer<Key, Value> producerWithJsonSerializer(String id, String bootstrapServers) {
 
-        Properties producerConfig = producerOf(id, bootstrapServers);
+        Properties producerConfig = props(id, bootstrapServers);
         return new KafkaProducer<>(producerConfig,  new StringSerializer(), new JsonSerializer());
     }
     
     static <Key, Value> Producer<Key, Value> producerOf(String id, String bootstrapServers, Serializer<Key> keySerializer, Serializer<Value> valueSerializer) {
 
-        Properties producerConfig = producerOf(id, bootstrapServers);
+        Properties producerConfig = props(id, bootstrapServers);
         return new KafkaProducer<>(producerConfig, keySerializer, valueSerializer);
     }
     

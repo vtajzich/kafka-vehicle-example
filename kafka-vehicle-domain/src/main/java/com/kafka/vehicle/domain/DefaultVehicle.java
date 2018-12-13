@@ -1,5 +1,6 @@
 package com.kafka.vehicle.domain;
 
+import java.util.StringJoiner;
 import java.util.UUID;
 
 class DefaultVehicle implements Vehicle {
@@ -26,5 +27,13 @@ class DefaultVehicle implements Vehicle {
     @Override
     public Metadata getMetadata() {
         return metadata;
+    }
+
+    @Override
+    public String toString() {
+        return new StringJoiner(", ", DefaultVehicle.class.getSimpleName() + "[", "]")
+                .add("id='" + id + "'")
+                .add("name='" + name + "'")
+                .toString();
     }
 }

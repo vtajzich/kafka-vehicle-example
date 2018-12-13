@@ -1,0 +1,5 @@
+dependencies {
+    
+    implementation project(':kafka-vehicle-domain')
+    implementation project(':kafka-vehicle-kafka')
+}
