@@ -28,7 +28,7 @@ public class VehicleIngestionApp {
 
         final String bootstrapServers = "localhost:9092";
 
-        Producer<String, VehicleSnapshot> producer = Builder.producerWithJsonSerializer(Topic.VEHICLE_SNAPSHOT.getValue(), bootstrapServers);
+        Producer<String, VehicleSnapshot> producer = Builder.producerWithJsonSerializer(PRODUCER_ID, bootstrapServers);
 
         final StreamsBuilder builder = new StreamsBuilder();
 
@@ -48,7 +48,7 @@ public class VehicleIngestionApp {
                .groupByKey(Serialized.with(Serdes.String(), vehicleSnapshotSerde))
                .reduce((previousPosition, currentPosition) -> currentPosition.merge(previousPosition))
                .toStream()
-               .foreach(((key, value) -> producer.send(new ProducerRecord<>(key, value))));
+               .foreach(((key, value) -> producer.send(new ProducerRecord<>(Topic.VEHICLE_SNAPSHOT.getValue(), key, value))));
 //               .foreach((key, value) -> System.out.println("Vehicle received update: (" + value.getVehicle().getName() + " -> " + value.getPosition().getPosition().getX() + "," + value.getPosition().getPosition().getY() + " updates)"));
 
 
