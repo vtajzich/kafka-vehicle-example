@@ -42,7 +42,7 @@ public class VehicleGeneratorApp {
                 var vehicleModel = vehicleModels.get(carModelIndex);
                 int numberOfPassengers = RandomUtil.getRandomNumberInRange(1, 5);
 
-                return Vehicle.of(vehicleModel.getMake() + " - " + vehicleModel.getName(), Metadata.of(numberOfPassengers));
+                return Vehicle.of(vehicleModel.getMake() + " - " + vehicleModel.getName(), Metadata.of(vehicleModel.getMake(), vehicleModel.getYear(), numberOfPassengers));
             };
 
             Stream.generate(vehicleSupplier)
