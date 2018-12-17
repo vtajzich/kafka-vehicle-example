@@ -1,6 +1,7 @@
 package com.kafka.vehicle.domain;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 public interface Position {
@@ -14,6 +15,7 @@ public interface Position {
 
     int getY();
 
+    @JsonIgnore
     default double distance(Position otherPosition) {
         int dx = otherPosition.getX() - this.getX();
         int dy = otherPosition.getY() - this.getY();
