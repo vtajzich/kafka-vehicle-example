@@ -4,5 +4,5 @@ import com.kafka.vehicle.passengers.domain.TransportedPassenger;
 
 public interface PassengersUpdateService {
 
-    void updatePassengers(TransportedPassenger transportedPassenger);
+    void updatePassengers(String key, TransportedPassenger transportedPassenger);
 }

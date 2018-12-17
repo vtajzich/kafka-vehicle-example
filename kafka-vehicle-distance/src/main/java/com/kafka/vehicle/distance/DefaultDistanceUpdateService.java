@@ -15,7 +15,6 @@ public class DefaultDistanceUpdateService implements DistanceUpdateService {
     
     @Override
     public void updateDistance(final String key, final String vehicle, final double distance) {
-        System.out.println("======Updating distance======");
         System.out.println(MessageFormat.format("id: {0}, vehicle: {1}, updated distance: {2}", key, vehicle, distance));
         
         traveledDistanceRepository.save(new TraveledDistance(key, vehicle, distance));

@@ -1,0 +1,16 @@
+version: '3.5'
+services:
+  
+  passengers-postgres:
+    image: postgres
+    ports:
+      - "5432:5432"
+    environment:
+      - "POSTGRES_PASSWORD=mysecretpassword"
+    
+  distance-postgres:
+    image: postgres
+    ports:
+      - "5433:5432"
+    environment:
+      - "POSTGRES_PASSWORD=mysecretpassword"

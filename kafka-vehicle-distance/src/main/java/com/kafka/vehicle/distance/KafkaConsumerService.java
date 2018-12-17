@@ -51,11 +51,9 @@ public class KafkaConsumerService implements ApplicationListener<ContextRefreshe
                .peek((key, value) -> System.out.println("received vehicle snapshot: key: " + key + ", vehicle: " + value.getVehicle().getName() + ", position: " + value.getPosition().getPosition()))
                .leftJoin(traveledDistanceKTable, (update, distance) -> distanceVehicleJoiner.apply(distance,update), Joined.with(Serdes.String(), vehicleSnapshotSerde, traveledDistanceSerde))
                .groupByKey(Serialized.with(Serdes.String(),traveledDistanceSerde))
-               //.reduce()
                .reduce((previous, current) -> current)
                .toStream()
                .foreach((key, value) -> process(key, value));
-        //               .foreach((key, value) -> System.out.println("Vehicle received update: (" + value.getVehicle().getName() + " -> " + value.getPosition().getPosition().getX() + "," + value.getPosition().getPosition().getY() + " updates)"));
 
         final Topology topology = builder.build();
 

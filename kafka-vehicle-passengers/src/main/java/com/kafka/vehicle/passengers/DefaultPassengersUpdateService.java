@@ -14,9 +14,8 @@ public class DefaultPassengersUpdateService implements PassengersUpdateService {
     }
 
     @Override
-    public void updatePassengers(TransportedPassenger transportedPassenger) {
-        System.out.println("======Updating passengers======");
-
+    public void updatePassengers(String key, TransportedPassenger transportedPassenger) {
         repository.save(transportedPassenger);
+        System.out.println("Updated record: " + transportedPassenger.getMake() + ", " + transportedPassenger.getTotalPassengersTransported());
     }
 }

@@ -9,6 +9,7 @@ import com.kafka.vehicle.kafka.ShutdownHook;
 import com.kafka.vehicle.kafka.serdes.JsonSerde;
 import org.apache.kafka.clients.producer.Producer;
 import org.apache.kafka.clients.producer.ProducerRecord;
+import org.apache.kafka.clients.producer.RecordMetadata;
 import org.apache.kafka.common.serialization.Serde;
 import org.apache.kafka.common.serialization.Serdes;
 import org.apache.kafka.streams.KafkaStreams;
@@ -19,38 +20,41 @@ import org.apache.kafka.streams.kstream.Joined;
 import org.apache.kafka.streams.kstream.KTable;
 import org.apache.kafka.streams.kstream.Serialized;
 
+import java.util.concurrent.Future;
+
 public class VehicleIngestionApp {
 
     private static final String PRODUCER_ID = "vehicle-movement-ingestion";
     private static final String CONSUMER_ID = "vehicle-movement-ingestion-consumer";
 
+    final String bootstrapServers = "localhost:9092";
+
+    private Producer<String, VehicleSnapshot> producer = Builder.producerWithJsonSerializer(PRODUCER_ID, bootstrapServers);
+
+    Serde<Vehicle> vehicleSerde = JsonSerde.of(Vehicle.class);
+    Serde<PositionUpdate> positionUpdateSerde = JsonSerde.of(PositionUpdate.class);
+    Serde<VehicleSnapshot> vehicleSnapshotSerde = JsonSerde.of(VehicleSnapshot.class);
+    VehicleStatusMerger vehicleStatusMerger = new VehicleStatusMerger();
+    
     public static void main(String[] args) {
 
-        final String bootstrapServers = "localhost:9092";
-
-        Producer<String, VehicleSnapshot> producer = Builder.producerWithJsonSerializer(PRODUCER_ID, bootstrapServers);
+        var vehicleIngestionApp = new VehicleIngestionApp();
+        vehicleIngestionApp.run();
+    }
+    
+    public void run() {
 
         final StreamsBuilder builder = new StreamsBuilder();
 
-        Serde<Vehicle> vehicleSerde = JsonSerde.of(Vehicle.class);
-        Serde<PositionUpdate> positionUpdateSerde = JsonSerde.of(PositionUpdate.class);
-        Serde<VehicleSnapshot> vehicleSnapshotSerde = JsonSerde.of(VehicleSnapshot.class);
-        VehicleStatusMerger vehicleStatusMerger = new VehicleStatusMerger();
-
         KTable<String, Vehicle> newVehiclesKTable = builder.table(Topic.VEHICLE_NEW.getValue(), Consumed.with(Serdes.String(), vehicleSerde));
 
-        //            newVehiclesKTable.toStream()
-        //                             .foreach((key, value) -> System.out.println("Received new vehicle: " + value));
-
         builder.stream(Topic.VEHICLE_POSITION_UPDATE.getValue(), Consumed.with(Serdes.String(), positionUpdateSerde))
-               .peek((key, value) -> System.out.println("key: " + key + ", value: " + value))
-               .leftJoin(newVehiclesKTable, (update, vehicle) -> vehicleStatusMerger.apply(vehicle, update), Joined.with(Serdes.String(), positionUpdateSerde, vehicleSerde))
-               .groupByKey(Serialized.with(Serdes.String(), vehicleSnapshotSerde))
-               .reduce((previousPosition, currentPosition) -> currentPosition.merge(previousPosition))
-               .toStream()
-               .peek((key, value) -> System.out.println("key: " + key + ", value: " + value))
-               .foreach(((key, value) -> producer.send(new ProducerRecord<>(Topic.VEHICLE_SNAPSHOT.getValue(), key, value))));
-//               .foreach((key, value) -> System.out.println("Vehicle received update: (" + value.getVehicle().getName() + " -> " + value.getPosition().getPosition().getX() + "," + value.getPosition().getPosition().getY() + " updates)"));
+                .leftJoin(newVehiclesKTable, this::joinVehicleAndUpdate, Joined.with(Serdes.String(), positionUpdateSerde, vehicleSerde))
+                .groupByKey(Serialized.with(Serdes.String(), vehicleSnapshotSerde))
+                .reduce(this::mergePosition)
+                .toStream()
+                .peek((key, value) -> System.out.println("key: " + key + ", value: " + value))
+                .foreach(this::produceVehicleSnapshot);
 
 
         final Topology topology = builder.build();
@@ -59,6 +63,18 @@ public class VehicleIngestionApp {
         streams.cleanUp();
 
         ShutdownHook.of(() -> streams.start(), () -> streams.close()).await();
+    }
+
+    private VehicleSnapshot joinVehicleAndUpdate(PositionUpdate update, Vehicle vehicle) {
+        return vehicleStatusMerger.apply(vehicle, update);
+    }
+
+    private VehicleSnapshot mergePosition(VehicleSnapshot previousPosition, VehicleSnapshot currentPosition) {
+        return currentPosition.merge(previousPosition);
+    }
+
+    private Future<RecordMetadata> produceVehicleSnapshot(String key, VehicleSnapshot value) {
+        return producer.send(new ProducerRecord<>(Topic.VEHICLE_SNAPSHOT.getValue(), key, value));
     }
 
 }
