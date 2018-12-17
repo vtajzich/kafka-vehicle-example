@@ -48,6 +48,7 @@ public class VehicleIngestionApp {
                .groupByKey(Serialized.with(Serdes.String(), vehicleSnapshotSerde))
                .reduce((previousPosition, currentPosition) -> currentPosition.merge(previousPosition))
                .toStream()
+               .peek((key, value) -> System.out.println("key: " + key + ", value: " + value))
                .foreach(((key, value) -> producer.send(new ProducerRecord<>(Topic.VEHICLE_SNAPSHOT.getValue(), key, value))));
 //               .foreach((key, value) -> System.out.println("Vehicle received update: (" + value.getVehicle().getName() + " -> " + value.getPosition().getPosition().getX() + "," + value.getPosition().getPosition().getY() + " updates)"));
 

@@ -22,6 +22,14 @@ public class DefaultVehicleSnapshot implements VehicleSnapshot {
 
     @Override
     public VehicleSnapshot merge(final VehicleSnapshot previousPosition) {
-        return new DefaultVehicleSnapshot(previousPosition.getPosition(), this.vehicle);
+        return new DefaultVehicleSnapshot(this.getPosition(), this.getVehicle());
+    }
+
+    @Override
+    public String toString() {
+        return "DefaultVehicleSnapshot{" +
+               "positionUpdate=" + positionUpdate +
+               ", vehicle=" + vehicle +
+               '}';
     }
 }
