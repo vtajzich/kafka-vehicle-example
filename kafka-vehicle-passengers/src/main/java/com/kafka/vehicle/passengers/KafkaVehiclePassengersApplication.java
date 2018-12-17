@@ -9,16 +9,5 @@ public class KafkaVehiclePassengersApplication {
 	public static void main(String[] args) {
 		SpringApplication.run(KafkaVehiclePassengersApplication.class, args);
 	}
-	
-	/*
-	
-	
-	| vehicle_id | name | distance|
-	
-	
-	| make | year of make | total passengers transported | 
-	
-	 */
-
 }
 

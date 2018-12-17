@@ -1,8 +1,8 @@
 package com.kafka.vehicle.passengers;
 
-import com.kafka.vehicle.domain.Position;
+import com.kafka.vehicle.passengers.domain.TransportedPassenger;
 
 public interface PassengersUpdateService {
 
-    void updatePassengers(String key, String vehicleBrand, Position position);
+    void updatePassengers(TransportedPassenger transportedPassenger);
 }
